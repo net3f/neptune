@@ -9,12 +9,12 @@ repository = "https://github.com/porcuquine/poseidon"
 
 [dependencies]
 lazy_static = "1.4.0"
-bellperson = "0.9.2"
+bellperson = { package = "bellman", git = "https://github.com/w3f/bellman", branch = "neptune", version = "0.6.0" }
 blake2s_simd = "0.5"
 byteorder = "1"
-ff = { version = "0.2.1", package = "fff" }
+ff = { version = "0.6.0" }
 generic-array = "0.13.2"
-paired = "0.20.0"
+paired = { package = "pairing", version = "0.16.0" }
 triton = { version = "1.1.0", package = "neptune-triton", default-features = false, features = ["opencl"], optional = true }
 
 [dev-dependencies]
@@ -26,8 +26,8 @@ rand_xorshift = "0.2.0"
 serde_json = "1.0.53"
 
 [build-dependencies]
-paired = "0.20.0"
-ff = { version = "0.2.1", package = "fff" }
+paired = { package = "pairing", version = "0.16.0" }
+ff = { version = "0.6.0" }
 
 [[bench]]
 name = "hash"
