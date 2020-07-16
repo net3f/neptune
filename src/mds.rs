@@ -1,4 +1,5 @@
-use ff::{Field, ScalarEngine};
+use ff::{Field};
+use ff::PrimeField as ScalarEngine;
 
 use crate::matrix;
 use crate::matrix::{
@@ -117,9 +118,9 @@ pub fn factor_to_sparse_matrices<E: ScalarEngine>(
 
 fn generate_mds<E: ScalarEngine>(t: usize) -> Matrix<Scalar<E>> {
     // Source: https://github.com/dusk-network/dusk-poseidon-merkle/commit/776c37734ea2e71bb608ce4bc58fdb5f208112a7#diff-2eee9b20fb23edcc0bf84b14167cbfdc
-    let mut matrix: Vec<Vec<E::Fr>> = Vec::with_capacity(t);
-    let mut xs: Vec<E::Fr> = Vec::with_capacity(t);
-    let mut ys: Vec<E::Fr> = Vec::with_capacity(t);
+    let mut matrix: Vec<Vec<E>> = Vec::with_capacity(t);
+    let mut xs: Vec<E> = Vec::with_capacity(t);
+    let mut ys: Vec<E> = Vec::with_capacity(t);
 
     // Generate x and y values deterministically for the cauchy matrix
     // where x[i] != y[i] to allow the values to be inverted
@@ -136,12 +137,12 @@ fn generate_mds<E: ScalarEngine>(t: usize) -> Matrix<Scalar<E>> {
     }
 
     for i in 0..t {
-        let mut row: Vec<E::Fr> = Vec::with_capacity(t);
+        let mut row: Vec<E> = Vec::with_capacity(t);
         for j in 0..t {
             // Generate the entry at (i,j)
             let mut tmp = xs[i];
             tmp.add_assign(&ys[j]);
-            let entry = tmp.inverse().unwrap();
+            let entry = tmp.invert().unwrap();
             row.insert(j, entry);
         }
         matrix.push(row);

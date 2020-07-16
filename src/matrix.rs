@@ -1,10 +1,11 @@
-use ff::{Field, ScalarEngine};
+use ff::{Field};
+use ff::PrimeField as ScalarEngine;
 
 /// Matrix functions here are, at least for now, quick and dirty — intended only to support precomputation of poseidon optimization.
 
 /// Matrix represented as a Vec of rows, so that m[i][j] represents the jth column of the ith row in Matrix, m.
 pub type Matrix<T> = Vec<Vec<T>>;
-pub type Scalar<E> = <E as ScalarEngine>::Fr;
+pub type Scalar<E> = E;
 
 pub fn rows<T>(matrix: &Matrix<T>) -> usize {
     matrix.len()
@@ -84,7 +85,7 @@ fn vec_mul<E: ScalarEngine>(a: &[Scalar<E>], b: &[Scalar<E>]) -> Scalar<E> {
         .zip(b)
         .fold(Scalar::<E>::zero(), |mut acc, (v1, v2)| {
             let mut tmp = v1.clone();
-            tmp.mul_assign(&v2);
+            tmp.mul_assign(v2);
             acc.add_assign(&tmp);
             acc
         })
@@ -239,7 +240,7 @@ fn eliminate<E: ScalarEngine>(
     let pivot = &matrix[pivot_index];
     let pivot_val = pivot[column];
 
-    let inv_pivot = pivot_val.inverse()?; // This should never fail since we have a non-zero `pivot_val` if we got here.
+    let inv_pivot = pivot_val.invert().unwrap(); // This should never fail since we have a non-zero `pivot_val` if we got here.
     let mut result = Vec::with_capacity(matrix.len());
     result.push(pivot.clone());
 
@@ -314,7 +315,7 @@ fn reduce_to_identity<E: ScalarEngine>(
         let shadow_row = &shadow[idx];
 
         let val = row[idx];
-        let inv = val.inverse()?; // If `val` is zero, then there is no inverse, and we cannot compute a result.
+        let inv = val.invert().unwrap(); // If `val` is zero, then there is no inverse, and we cannot compute a result.
 
         let mut normalized = scalar_vec_mul::<E>(inv, &row);
         let mut shadow_normalized = scalar_vec_mul::<E>(inv, &shadow_row);
@@ -548,7 +549,7 @@ mod tests {
                 1,
                 res.unwrap()
                     .iter()
-                    .filter(|&row| row[i] != <Bls12 as ScalarEngine>::Fr::zero())
+                    .filter(|&row| row[i] != <Bls12 as ScalarEngine>::zero())
                     .count()
             );
         }

@@ -4,7 +4,8 @@ use crate::poseidon_alt::{hash_correct, hash_optimized_dynamic};
 use crate::preprocessing::compress_round_constants;
 use crate::{matrix, quintic_s_box, BatchHasher, Strength, DEFAULT_STRENGTH};
 use crate::{round_constants, round_numbers, scalar_from_u64, Error};
-use ff::{Field, PrimeField, ScalarEngine};
+use ff::{Field, PrimeField};
+use ff::PrimeField as ScalarEngine;
 use generic_array::{sequence::GenericSequence, typenum, ArrayLength, GenericArray};
 use paired::bls12_381;
 use paired::bls12_381::Bls12;
@@ -92,12 +93,12 @@ impl_arity!(
 pub struct Poseidon<'a, E, A = U2>
 where
     E: ScalarEngine,
-    A: Arity<E::Fr>,
+    A: Arity<E>,
 {
     pub(crate) constants_offset: usize,
     pub(crate) current_round: usize, // Used in static optimization only for now.
     /// the elements to permute
-    pub elements: GenericArray<E::Fr, A::ConstantsSize>,
+    pub elements: GenericArray<E, A::ConstantsSize>,
     pos: usize,
     pub(crate) constants: &'a PoseidonConstants<E, A>,
     _e: PhantomData<E>,
@@ -107,14 +108,14 @@ where
 pub struct PoseidonConstants<E, A>
 where
     E: ScalarEngine,
-    A: Arity<E::Fr>,
+    A: Arity<E>,
 {
     pub mds_matrices: MDSMatrices<E>,
-    pub round_constants: Vec<E::Fr>,
-    pub compressed_round_constants: Vec<E::Fr>,
-    pub pre_sparse_matrix: Matrix<E::Fr>,
+    pub round_constants: Vec<E>,
+    pub compressed_round_constants: Vec<E>,
+    pub pre_sparse_matrix: Matrix<E>,
     pub sparse_matrixes: Vec<SparseMatrix<E>>,
-    pub arity_tag: E::Fr,
+    pub arity_tag: E,
     pub full_rounds: usize,
     pub half_full_rounds: usize,
     pub partial_rounds: usize,
@@ -139,7 +140,7 @@ pub const DEFAULT_HASH_MODE: HashMode = OptimizedStatic;
 impl<'a, E, A> PoseidonConstants<E, A>
 where
     E: ScalarEngine,
-    A: Arity<E::Fr>,
+    A: Arity<E>,
 {
     pub fn new() -> Self {
         Self::new_with_strength(DEFAULT_STRENGTH)
@@ -207,14 +208,14 @@ where
 impl<'a, E, A> Poseidon<'a, E, A>
 where
     E: ScalarEngine,
-    A: Arity<E::Fr>,
+    A: Arity<E>,
 {
     pub fn new(constants: &'a PoseidonConstants<E, A>) -> Self {
         let elements = GenericArray::generate(|i| {
             if i == 0 {
                 constants.arity_tag
             } else {
-                E::Fr::zero()
+                E::zero()
             }
         });
         Poseidon {
@@ -226,7 +227,7 @@ where
             _e: PhantomData::<E>,
         }
     }
-    pub fn new_with_preimage(preimage: &[E::Fr], constants: &'a PoseidonConstants<E, A>) -> Self {
+    pub fn new_with_preimage(preimage: &[E], constants: &'a PoseidonConstants<E, A>) -> Self {
         assert_eq!(preimage.len(), A::to_usize(), "Invalid preimage size");
 
         let elements = GenericArray::generate(|i| {
@@ -254,7 +255,7 @@ where
     /// # Panics
     ///
     /// Panics if the provided slice is bigger than the arity.
-    pub fn set_preimage(&mut self, preimage: &[E::Fr]) {
+    pub fn set_preimage(&mut self, preimage: &[E]) {
         self.reset();
         self.elements[1..].copy_from_slice(&preimage);
         self.pos = self.elements.len();
@@ -266,13 +267,13 @@ where
         self.current_round = 0;
         self.elements[1..]
             .iter_mut()
-            .for_each(|l| *l = scalar_from_u64::<E::Fr>(0u64));
+            .for_each(|l| *l = scalar_from_u64::<E>(0u64));
         self.elements[0] = self.constants.arity_tag;
         self.pos = 1;
     }
 
     /// The returned `usize` represents the element position (within arity) for the input operation
-    pub fn input(&mut self, element: E::Fr) -> Result<usize, Error> {
+    pub fn input(&mut self, element: E) -> Result<usize, Error> {
         // Cannot input more elements than the defined arity
         if self.pos >= self.constants.width() {
             return Err(Error::FullBuffer);
@@ -285,7 +286,7 @@ where
         Ok(self.pos - 1)
     }
 
-    pub fn hash_in_mode(&mut self, mode: HashMode) -> E::Fr {
+    pub fn hash_in_mode(&mut self, mode: HashMode) -> E {
         match mode {
             Correct => hash_correct(self),
             OptimizedDynamic => hash_optimized_dynamic(self),
@@ -293,11 +294,11 @@ where
         }
     }
 
-    pub fn hash(&mut self) -> E::Fr {
+    pub fn hash(&mut self) -> E {
         self.hash_in_mode(DEFAULT_HASH_MODE)
     }
 
-    pub fn hash_optimized_static(&mut self) -> E::Fr {
+    pub fn hash_optimized_static(&mut self) -> E {
         // The first full round should use the initial constants.
         self.add_round_constants();
 
@@ -420,8 +421,8 @@ where
         self.product_mds_with_matrix(&self.constants.mds_matrices.m);
     }
 
-    pub(crate) fn product_mds_with_matrix(&mut self, matrix: &Matrix<E::Fr>) {
-        let mut result = GenericArray::<E::Fr, A::ConstantsSize>::generate(|_| E::Fr::zero());
+    pub(crate) fn product_mds_with_matrix(&mut self, matrix: &Matrix<E>) {
+        let mut result = GenericArray::<E, A::ConstantsSize>::generate(|_| E::zero());
 
         for (j, val) in result.iter_mut().enumerate() {
             for (i, row) in matrix.iter().enumerate() {
@@ -436,7 +437,7 @@ where
 
     // Sparse matrix in this context means one of the form, M''.
     fn product_mds_with_sparse_matrix(&mut self, sparse_matrix: &SparseMatrix<E>) {
-        let mut result = GenericArray::<E::Fr, A::ConstantsSize>::generate(|_| E::Fr::zero());
+        let mut result = GenericArray::<E, A::ConstantsSize>::generate(|_| E::zero());
 
         // First column is dense.
         for (i, val) in sparse_matrix.w_hat.iter().enumerate() {
@@ -468,9 +469,9 @@ pub struct SimplePoseidonBatchHasher<'a, A>
 where
     A: Arity<bls12_381::Fr>,
 {
-    constants: PoseidonConstants<Bls12, A>,
+    constants: PoseidonConstants<bls12_381::Fr, A>,
     max_batch_size: usize,
-    _s: PhantomData<Poseidon<'a, Bls12, A>>,
+    _s: PhantomData<Poseidon<'a, bls12_381::Fr, A>>,
 }
 
 impl<'a, A> SimplePoseidonBatchHasher<'a, A>
@@ -486,9 +487,9 @@ where
         max_batch_size: usize,
     ) -> Result<Self, Error> {
         Ok(Self {
-            constants: PoseidonConstants::<Bls12, A>::new_with_strength(strength),
+            constants: PoseidonConstants::<bls12_381::Fr, A>::new_with_strength(strength),
             max_batch_size,
-            _s: PhantomData::<Poseidon<'a, Bls12, A>>,
+            _s: PhantomData::<Poseidon<'a, bls12_381::Fr, A>>,
         })
     }
 }
@@ -544,7 +545,7 @@ mod tests {
         let mut h = Poseidon::<Bls12, U2>::new_with_preimage(&preimage, &constants);
 
         let mut h2 = h.clone();
-        let result: <Bls12 as ScalarEngine>::Fr = h.hash();
+        let result: ScalarEngine = h.hash();
 
         assert_eq!(result, h2.hash());
     }
@@ -558,7 +559,7 @@ mod tests {
         let mut h = Poseidon::<Bls12, typenum::U3>::new_with_preimage(&preimage, &constants);
 
         let mut h2 = h.clone();
-        let result: <Bls12 as ScalarEngine>::Fr = h.hash();
+        let result: ScalarEngine = h.hash();
 
         assert_eq!(result, h2.hash());
     }

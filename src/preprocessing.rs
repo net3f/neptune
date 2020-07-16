@@ -1,7 +1,8 @@
 use crate::matrix::{apply_matrix, vec_add};
 use crate::mds::MDSMatrices;
 use crate::quintic_s_box;
-use ff::{Field, ScalarEngine};
+use ff::{Field};
+use ff::PrimeField as ScalarEngine;
 
 // - Compress constants by pushing them back through linear layers and through the identity components of partial layers.
 // - As a result, constants need only be added after each S-box.
@@ -9,10 +10,10 @@ pub(crate) fn compress_round_constants<E: ScalarEngine>(
     width: usize,
     full_rounds: usize,
     partial_rounds: usize,
-    round_constants: &Vec<E::Fr>,
+    round_constants: &Vec<E>,
     mds_matrices: &MDSMatrices<E>,
     partial_preprocessed: usize,
-) -> Vec<E::Fr> {
+) -> Vec<E> {
     let mds_matrix = &mds_matrices.m;
     let inverse_matrix = &mds_matrices.m_inv;
 
@@ -51,7 +52,7 @@ pub(crate) fn compress_round_constants<E: ScalarEngine>(
     //   - (Last produced should be first applied, so either pop until empty, or reverse and extend, etc.
 
     // `partial_keys` will accumulate the single post-S-box constant for each partial-round, in reverse order.
-    let mut partial_keys: Vec<E::Fr> = Vec::new();
+    let mut partial_keys: Vec<E> = Vec::new();
 
     let final_round = half_full_rounds + partial_rounds;
     let final_round_key = round_keys(final_round).to_vec();
@@ -63,7 +64,7 @@ pub(crate) fn compress_round_constants<E: ScalarEngine>(
             let mut inverted = apply_matrix::<E>(inverse_matrix, &acc);
 
             partial_keys.push(inverted[0]);
-            inverted[0] = E::Fr::zero();
+            inverted[0] = E::zero();
 
             vec_add::<E>(&previous_round_keys, &inverted)
         });
@@ -91,7 +92,7 @@ pub(crate) fn compress_round_constants<E: ScalarEngine>(
         let pk = inv[0];
 
         // M^-1(T) - pk (kinda)
-        inv[0] = E::Fr::zero();
+        inv[0] = E::zero();
 
         // (M^-1(T) - pk) - I
         let result_key = vec_add::<E>(&initial_round_keys, &inv);
@@ -107,7 +108,7 @@ pub(crate) fn compress_round_constants<E: ScalarEngine>(
         ////////////////////////////////////////////////////////////////////////////////
         // Shared between branches, arbitrary initial state representing the output of a previous round's S-Box layer.
         // X
-        let initial_state = vec![E::Fr::one(); width];
+        let initial_state = vec![E::one(); width];
 
         ////////////////////////////////////////////////////////////////////////////////
         // Compute one step with the given (unpreprocessed) constants.

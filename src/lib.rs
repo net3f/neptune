@@ -6,7 +6,8 @@ extern crate lazy_static;
 pub use crate::poseidon::{Arity, Poseidon};
 use crate::round_constants::generate_constants;
 pub use error::Error;
-use ff::{Field, PrimeField, ScalarEngine};
+use ff::{Field, PrimeField};
+use ff::PrimeField as ScalarEngine;
 use generic_array::GenericArray;
 pub use paired::bls12_381::Fr as Scalar;
 use paired::bls12_381::FrRepr;
@@ -124,18 +125,18 @@ pub fn round_numbers(arity: usize, strength: &Strength) -> (usize, usize) {
 
 /// convert
 pub fn scalar_from_u64<Fr: PrimeField>(i: u64) -> Fr {
-    Fr::from_repr(<Fr::Repr as From<u64>>::from(i)).unwrap()
+    Fr::from(i)
 }
 
 /// create field element from four u64
 pub fn scalar_from_u64s(parts: [u64; 4]) -> Scalar {
-    Scalar::from_repr(FrRepr(parts)).unwrap()
+    Scalar::zero() //TODO
 }
 
 const SBOX: u8 = 1; // x^5
 const FIELD: u8 = 1; // Gf(p)
 
-fn round_constants<E: ScalarEngine>(arity: usize, strength: &Strength) -> Vec<E::Fr> {
+fn round_constants<E: ScalarEngine>(arity: usize, strength: &Strength) -> Vec<E> {
     let t = arity + 1;
 
     let (full_rounds, partial_rounds) = round_numbers(arity, strength);
@@ -143,7 +144,7 @@ fn round_constants<E: ScalarEngine>(arity: usize, strength: &Strength) -> Vec<E:
     let r_f = full_rounds as u16;
     let r_p = partial_rounds as u16;
 
-    let fr_num_bits = E::Fr::NUM_BITS;
+    let fr_num_bits = E::NUM_BITS;
     let field_size = {
         assert!(fr_num_bits <= std::u16::MAX as u32);
         // It's safe to convert to u16 for compatibility with other types.
@@ -155,9 +156,9 @@ fn round_constants<E: ScalarEngine>(arity: usize, strength: &Strength) -> Vec<E:
 
 /// Apply the quintic S-Box (s^5) to a given item
 pub(crate) fn quintic_s_box<E: ScalarEngine>(
-    l: &mut E::Fr,
-    pre_add: Option<&E::Fr>,
-    post_add: Option<&E::Fr>,
+    l: &mut E,
+    pre_add: Option<&E>,
+    post_add: Option<&E>,
 ) {
     if let Some(x) = pre_add {
         l.add_assign(x);

@@ -7,7 +7,7 @@ use bellperson::gadgets::num;
 use bellperson::gadgets::num::AllocatedNum;
 use bellperson::{ConstraintSystem, LinearCombination, SynthesisError};
 use ff::Field;
-use ff::ScalarEngine as Engine;
+use ff::PrimeField as Engine;
 use std::marker::PhantomData;
 
 /// Similar to `num::Num`, we use `Elt` to accumulate both values and linear combinations, then eventually
@@ -37,7 +37,7 @@ impl<E: Engine> Elt<E> {
         }
     }
 
-    fn num_from_fr<CS: ConstraintSystem<E>>(fr: E::Fr) -> Self {
+    fn num_from_fr<CS: ConstraintSystem<E>>(fr: E) -> Self {
         let num = num::Num::<E>::zero();
         Self::Num(num.add_bool_with_coeff(CS::one(), &Boolean::Constant(true), fr))
     }
@@ -58,7 +58,7 @@ impl<E: Engine> Elt<E> {
                 if enforce {
                     cs.enforce(
                         || format!("enforce num allocation preserves lc"),
-                        |_| num.lc(E::Fr::one()),
+                        |_| num.lc(E::one()),
                         |lc| lc + CS::one(),
                         |lc| lc + v.get_variable(),
                     );
@@ -68,7 +68,7 @@ impl<E: Engine> Elt<E> {
         }
     }
 
-    fn val(&self) -> Option<E::Fr> {
+    fn val(&self) -> Option<E> {
         match self {
             Self::Allocated(v) => v.get_value(),
             Self::Num(num) => num.get_value(),
@@ -77,7 +77,7 @@ impl<E: Engine> Elt<E> {
 
     fn lc(&self) -> LinearCombination<E> {
         match self {
-            Self::Num(num) => num.lc(E::Fr::one()),
+            Self::Num(num) => num.lc(E::one()),
             Self::Allocated(v) => LinearCombination::<E>::zero() + v.get_variable(),
         }
     }
@@ -92,7 +92,7 @@ impl<E: Engine> Elt<E> {
     }
 
     /// Scale
-    fn scale<CS: ConstraintSystem<E>>(self, scalar: E::Fr) -> Result<Elt<E>, SynthesisError> {
+    fn scale<CS: ConstraintSystem<E>>(self, scalar: E) -> Result<Elt<E>, SynthesisError> {
         match self {
             Elt::Num(num) => Ok(Elt::Num(num.scale(scalar))),
             Elt::Allocated(a) => Elt::Num(a.into()).scale::<CS>(scalar),
@@ -104,7 +104,7 @@ impl<E: Engine> Elt<E> {
 pub struct PoseidonCircuit<'a, E, A>
 where
     E: Engine,
-    A: Arity<E::Fr>,
+    A: Arity<E>,
 {
     constants_offset: usize,
     width: usize,
@@ -119,7 +119,7 @@ where
 impl<'a, E, A> PoseidonCircuit<'a, E, A>
 where
     E: Engine,
-    A: Arity<E::Fr>,
+    A: Arity<E>,
 {
     /// Create a new Poseidon hasher for `preimage`.
     fn new(elements: Vec<Elt<E>>, constants: &'a PoseidonConstants<E, A>) -> Self {
@@ -284,7 +284,7 @@ where
 
     fn product_mds_with_matrix<CS: ConstraintSystem<E>>(
         &mut self,
-        matrix: &Matrix<E::Fr>,
+        matrix: &Matrix<E>,
     ) -> Result<(), SynthesisError> {
         let mut result: Vec<Elt<E>> = Vec::with_capacity(self.constants.width());
 
@@ -345,7 +345,7 @@ pub fn poseidon_hash<CS, E, A>(
 where
     CS: ConstraintSystem<E>,
     E: Engine,
-    A: Arity<E::Fr>,
+    A: Arity<E>,
 {
     let tag_element = Elt::num_from_fr::<CS>(constants.arity_tag);
     let mut elements = Vec::with_capacity(A::to_usize());
@@ -361,7 +361,7 @@ where
 fn quintic_s_box<CS: ConstraintSystem<E>, E: Engine>(
     mut cs: CS,
     e: &Elt<E>,
-    post_round_key: Option<E::Fr>,
+    post_round_key: Option<E>,
 ) -> Result<Elt<E>, SynthesisError> {
     let l = e.ensure_allocated(&mut cs.namespace(|| "S-box input"), true)?;
 
@@ -384,8 +384,8 @@ fn quintic_s_box<CS: ConstraintSystem<E>, E: Engine>(
 fn quintic_s_box_pre_add<CS: ConstraintSystem<E>, E: Engine>(
     mut cs: CS,
     e: &Elt<E>,
-    pre_round_key: Option<E::Fr>,
-    post_round_key: Option<E::Fr>,
+    pre_round_key: Option<E>,
+    post_round_key: Option<E>,
 ) -> Result<Elt<E>, SynthesisError> {
     if let (Some(pre_round_key), Some(post_round_key)) = (pre_round_key, post_round_key) {
         let l = e.ensure_allocated(&mut cs.namespace(|| "S-box input"), true)?;
@@ -411,8 +411,8 @@ fn quintic_s_box_pre_add<CS: ConstraintSystem<E>, E: Engine>(
 /// Compute l^5 and enforce constraint. If round_key is supplied, add it to l first.
 fn constant_quintic_s_box_pre_add_tag<CS: ConstraintSystem<E>, E: Engine>(
     tag: &Elt<E>,
-    pre_round_key: Option<E::Fr>,
-    post_round_key: Option<E::Fr>,
+    pre_round_key: Option<E>,
+    post_round_key: Option<E>,
 ) -> Elt<E> {
     let mut tag = tag.val().expect("missing tag val");
     pre_round_key.expect("pre_round_key must be provided");
@@ -426,7 +426,7 @@ fn constant_quintic_s_box_pre_add_tag<CS: ConstraintSystem<E>, E: Engine>(
 /// Calculates square of sum and enforces that constraint.
 pub fn square_sum<CS: ConstraintSystem<E>, E: Engine>(
     mut cs: CS,
-    to_add: E::Fr,
+    to_add: E,
     num: &AllocatedNum<E>,
     enforce: bool,
 ) -> Result<AllocatedNum<E>, SynthesisError>
@@ -459,8 +459,8 @@ pub fn mul_sum<CS: ConstraintSystem<E>, E: Engine>(
     mut cs: CS,
     a: &AllocatedNum<E>,
     b: &AllocatedNum<E>,
-    pre_add: Option<E::Fr>,
-    post_add: Option<E::Fr>,
+    pre_add: Option<E>,
+    post_add: Option<E>,
     enforce: bool,
 ) -> Result<AllocatedNum<E>, SynthesisError>
 where
@@ -486,7 +486,7 @@ where
 
     if enforce {
         if let Some(x) = post_add {
-            let mut neg = E::Fr::zero();
+            let mut neg = E::zero();
             neg.sub_assign(&x);
 
             if let Some(pre) = pre_add {
@@ -530,7 +530,7 @@ pub fn mul_pre_sum<CS: ConstraintSystem<E>, E: Engine>(
     mut cs: CS,
     a: &AllocatedNum<E>,
     b: &AllocatedNum<E>,
-    to_add: E::Fr,
+    to_add: E,
     enforce: bool,
 ) -> Result<AllocatedNum<E>, SynthesisError>
 where
@@ -562,8 +562,8 @@ where
 
 fn scalar_product_with_add<E: Engine, CS: ConstraintSystem<E>>(
     elts: &[Elt<E>],
-    scalars: &[E::Fr],
-    to_add: E::Fr,
+    scalars: &[E],
+    to_add: E,
 ) -> Result<Elt<E>, SynthesisError> {
     let tmp = scalar_product::<E, CS>(elts, scalars)?;
     let tmp2 = tmp.add::<CS>(Elt::<E>::num_from_fr::<CS>(to_add))?;
@@ -573,7 +573,7 @@ fn scalar_product_with_add<E: Engine, CS: ConstraintSystem<E>>(
 
 fn scalar_product<E: Engine, CS: ConstraintSystem<E>>(
     elts: &[Elt<E>],
-    scalars: &[E::Fr],
+    scalars: &[E],
 ) -> Result<Elt<E>, SynthesisError> {
     elts.iter()
         .zip(scalars)
