@@ -354,7 +354,7 @@ pub(crate) fn invert<E: ScalarEngine>(matrix: &Matrix<Scalar<E>>) -> Option<Matr
 mod tests {
     use super::*;
     use crate::scalar_from_u64;
-    use paired::bls12_381::{Bls12, Fr};
+    use paired::bls12_381::{Fr as Bls12, Fr};
 
     #[test]
     fn test_minor() {
@@ -549,7 +549,7 @@ mod tests {
                 1,
                 res.unwrap()
                     .iter()
-                    .filter(|&row| row[i] != <Bls12 as ScalarEngine>::zero())
+                    .filter(|&row| row[i] != Bls12::zero())
                     .count()
             );
         }

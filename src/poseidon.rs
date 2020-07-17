@@ -518,7 +518,7 @@ mod tests {
     use crate::*;
     use ff::Field;
     use generic_array::typenum;
-    use paired::bls12_381::{Bls12, Fr};
+    use paired::bls12_381::{Fr as Bls12, Fr};
 
     #[test]
     fn reset() {
@@ -545,7 +545,7 @@ mod tests {
         let mut h = Poseidon::<Bls12, U2>::new_with_preimage(&preimage, &constants);
 
         let mut h2 = h.clone();
-        let result: ScalarEngine = h.hash();
+        let result = h.hash();
 
         assert_eq!(result, h2.hash());
     }
@@ -559,7 +559,7 @@ mod tests {
         let mut h = Poseidon::<Bls12, typenum::U3>::new_with_preimage(&preimage, &constants);
 
         let mut h2 = h.clone();
-        let result: ScalarEngine = h.hash();
+        let result = h.hash();
 
         assert_eq!(result, h2.hash());
     }

@@ -206,7 +206,7 @@ fn bytes_into_fr<E: ScalarEngine>(bytes: &[u8]) -> Result<E, ()> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    pub use paired::bls12_381::Bls12;
+    use paired::bls12_381::Fr as Bls12;
     use serde_json::Value;
     use std::fs::File;
     use std::io::{BufRead, BufReader};
