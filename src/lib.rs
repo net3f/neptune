@@ -130,7 +130,11 @@ pub fn scalar_from_u64<Fr: PrimeField>(i: u64) -> Fr {
 
 /// create field element from four u64
 pub fn scalar_from_u64s(parts: [u64; 4]) -> Scalar {
-    Scalar::zero() //TODO
+    use byteorder::ByteOrder;
+
+    let mut repr = <Scalar as PrimeField>::Repr::default();
+    <Scalar as PrimeField>::ReprEndianness::write_u64_into(&parts, repr.as_mut());
+    Scalar::from_repr(repr).unwrap()
 }
 
 const SBOX: u8 = 1; // x^5

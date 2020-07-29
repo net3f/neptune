@@ -53,7 +53,7 @@ pub fn generate_constants<E: ScalarEngine>(
                     // Smallest number of bytes which will hold one field element.
                     let mut bytes = vec![0u8; element_bytes as usize];
                     grain.get_next_bytes(&mut bytes);
-                    if let Ok(f) = bytes_into_fr::<E>(&mut bytes) {
+                    if let Some(f) = bytes_into_fr::<E>(&mut bytes) {
                         round_constants.push(f);
                         false
                     } else {
@@ -185,8 +185,11 @@ pub fn bits_to_bytes(bits: &[bool]) -> Vec<u8> {
 
 // Takes a slice of bytes and returns an Fr if byte slice is exactly 32 bytes and does not overflow.
 // Otherwise, returns a BadFrBytesError.
-fn bytes_into_fr<E: ScalarEngine>(bytes: &[u8]) -> Result<E, ()> {
+fn bytes_into_fr<E: ScalarEngine>(bytes: &[u8]) -> Option<E> {
     assert_eq!(bytes.len(), 32);
+    let mut repr = E::Repr::default();
+    repr.as_mut().copy_from_slice(bytes);
+    repr.as_mut().reverse();
 
 //    let mut fr_repr = <E::Repr as Default>::default();
 //    fr_repr
@@ -200,7 +203,7 @@ fn bytes_into_fr<E: ScalarEngine>(bytes: &[u8]) -> Result<E, ()> {
 //        .read_be(bytes)
 //        .map_err(|e| PrimeFieldDecodingError::NotInField(e.to_string()))?;
 
-    Ok(E::zero()) //TODO:
+    E::from_repr(repr)
 }
 
 #[cfg(test)]
