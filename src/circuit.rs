@@ -438,7 +438,7 @@ where
             .get_value()
             .ok_or_else(|| SynthesisError::AssignmentMissing)?;
         tmp.add_assign(&to_add);
-        tmp.square();
+        tmp = tmp.square();
 
         Ok(tmp)
     })?;
