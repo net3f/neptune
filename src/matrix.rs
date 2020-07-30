@@ -315,7 +315,12 @@ fn reduce_to_identity<E: ScalarEngine>(
         let shadow_row = &shadow[idx];
 
         let val = row[idx];
-        let inv = val.invert().unwrap(); // If `val` is zero, then there is no inverse, and we cannot compute a result.
+        let inv = val.invert();
+        // If `val` is zero, then there is no inverse, and we cannot compute a result.
+        if bool::from(inv.is_none()) {
+            return None;
+        }
+        let inv = inv.unwrap();
 
         let mut normalized = scalar_vec_mul::<E>(inv, &row);
         let mut shadow_normalized = scalar_vec_mul::<E>(inv, &shadow_row);
