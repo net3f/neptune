@@ -9,7 +9,7 @@ repository = "https://github.com/porcuquine/poseidon"
 
 [dependencies]
 lazy_static = "1.4.0"
-bellperson = { package = "bellman", git = "https://github.com/w3f/bellman", branch = "neptune", version = "0.6.0" }
+bellperson = { package = "bellman", git = "https://github.com/w3f/bellman", branch = "neptune-bis", version = "0.6.0" }
 blake2s_simd = "0.5"
 byteorder = "1"
 ff = { version = "0.6.0" }
