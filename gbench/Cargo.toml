@@ -12,8 +12,8 @@ bellperson = "0.6.3"
 blake2s_simd = "0.5"
 byteorder = "1"
 env_logger = "0.7.1"
-ff = { git = "https://github.com/w3f/librustzcash", branch = "neptune", version = "0.6.0" }
+ff = { version = "0.8" }
 generic-array = "0.13.2"
 log = "0.4.8"
-paired = { package = "pairing", git = "https://github.com/w3f/librustzcash", branch = "neptune", version = "0.16.0" }
+paired = { package = "pairing", version = "0.18" }
 neptune = { path = "../", features=["gpu"] }

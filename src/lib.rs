@@ -9,8 +9,7 @@ pub use error::Error;
 use ff::{Field, PrimeField};
 use ff::PrimeField as ScalarEngine;
 use generic_array::GenericArray;
-pub use paired::bls12_381::Fr as Scalar;
-use paired::bls12_381::FrRepr;
+pub use bls12_381::Scalar;
 
 /// Poseidon circuit
 pub mod circuit;
@@ -130,10 +129,10 @@ pub fn scalar_from_u64<Fr: PrimeField>(i: u64) -> Fr {
 
 /// create field element from four u64
 pub fn scalar_from_u64s(parts: [u64; 4]) -> Scalar {
-    use byteorder::ByteOrder;
+    use byteorder::{ByteOrder, LittleEndian};
 
     let mut repr = <Scalar as PrimeField>::Repr::default();
-    <Scalar as PrimeField>::ReprEndianness::write_u64_into(&parts, repr.as_mut());
+    LittleEndian::write_u64_into(&parts, repr.as_mut());
     Scalar::from_repr(repr).unwrap()
 }
 

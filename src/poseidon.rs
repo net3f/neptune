@@ -7,8 +7,7 @@ use crate::{round_constants, round_numbers, scalar_from_u64, Error};
 use ff::{Field, PrimeField};
 use ff::PrimeField as ScalarEngine;
 use generic_array::{sequence::GenericSequence, typenum, ArrayLength, GenericArray};
-use paired::bls12_381;
-use paired::bls12_381::Bls12;
+use bls12_381::Scalar;
 use std::marker::PhantomData;
 use typenum::marker_traits::Unsigned;
 use typenum::*;
@@ -467,16 +466,16 @@ where
 #[derive(Debug)]
 pub struct SimplePoseidonBatchHasher<'a, A>
 where
-    A: Arity<bls12_381::Fr>,
+    A: Arity<Scalar>,
 {
-    constants: PoseidonConstants<bls12_381::Fr, A>,
+    constants: PoseidonConstants<Scalar, A>,
     max_batch_size: usize,
-    _s: PhantomData<Poseidon<'a, bls12_381::Fr, A>>,
+    _s: PhantomData<Poseidon<'a, Scalar, A>>,
 }
 
 impl<'a, A> SimplePoseidonBatchHasher<'a, A>
 where
-    A: 'a + Arity<bls12_381::Fr>,
+    A: 'a + Arity<Scalar>,
 {
     pub(crate) fn new(max_batch_size: usize) -> Result<Self, Error> {
         Self::new_with_strength(DEFAULT_STRENGTH, max_batch_size)
@@ -487,20 +486,20 @@ where
         max_batch_size: usize,
     ) -> Result<Self, Error> {
         Ok(Self {
-            constants: PoseidonConstants::<bls12_381::Fr, A>::new_with_strength(strength),
+            constants: PoseidonConstants::<Scalar, A>::new_with_strength(strength),
             max_batch_size,
-            _s: PhantomData::<Poseidon<'a, bls12_381::Fr, A>>,
+            _s: PhantomData::<Poseidon<'a, Scalar, A>>,
         })
     }
 }
 impl<'a, A> BatchHasher<A> for SimplePoseidonBatchHasher<'a, A>
 where
-    A: 'a + Arity<bls12_381::Fr>,
+    A: 'a + Arity<Scalar>,
 {
     fn hash(
         &mut self,
-        preimages: &[GenericArray<bls12_381::Fr, A>],
-    ) -> Result<Vec<bls12_381::Fr>, Error> {
+        preimages: &[GenericArray<Scalar, A>],
+    ) -> Result<Vec<Scalar>, Error> {
         Ok(preimages
             .iter()
             .map(|preimage| Poseidon::new_with_preimage(&preimage, &self.constants).hash())
@@ -518,18 +517,18 @@ mod tests {
     use crate::*;
     use ff::Field;
     use generic_array::typenum;
-    use paired::bls12_381::{Fr as Bls12, Fr};
+    use bls12_381::Scalar;
 
     #[test]
     fn reset() {
         let test_arity = 2;
         let preimage = vec![Scalar::one(); test_arity];
         let constants = PoseidonConstants::new();
-        let mut h = Poseidon::<Bls12, U2>::new_with_preimage(&preimage, &constants);
+        let mut h = Poseidon::<Scalar, U2>::new_with_preimage(&preimage, &constants);
         h.hash();
         h.reset();
 
-        let default = Poseidon::<Bls12, U2>::new(&constants);
+        let default = Poseidon::<Scalar, U2>::new(&constants);
         assert_eq!(default.pos, h.pos);
         assert_eq!(default.elements, h.elements);
         assert_eq!(default.constants_offset, h.constants_offset);
@@ -542,7 +541,7 @@ mod tests {
         let constants = PoseidonConstants::new();
         preimage[0] = Scalar::one();
 
-        let mut h = Poseidon::<Bls12, U2>::new_with_preimage(&preimage, &constants);
+        let mut h = Poseidon::<Scalar, U2>::new_with_preimage(&preimage, &constants);
 
         let mut h2 = h.clone();
         let result = h.hash();
@@ -556,7 +555,7 @@ mod tests {
         let constants = PoseidonConstants::new();
         preimage[0] = Scalar::one();
 
-        let mut h = Poseidon::<Bls12, typenum::U3>::new_with_preimage(&preimage, &constants);
+        let mut h = Poseidon::<Scalar, typenum::U3>::new_with_preimage(&preimage, &constants);
 
         let mut h2 = h.clone();
         let result = h.hash();
@@ -583,18 +582,18 @@ mod tests {
     /// Simple test vectors to ensure results don't change unintentionally in development.
     fn hash_values_aux<A>(strength: Strength)
     where
-        A: Arity<Fr>,
+        A: Arity<Scalar>,
     {
-        let constants = PoseidonConstants::<Bls12, A>::new_with_strength(strength);
-        let mut p = Poseidon::<Bls12, A>::new(&constants);
-        let mut p2 = Poseidon::<Bls12, A>::new(&constants);
-        let mut p3 = Poseidon::<Bls12, A>::new(&constants);
-        let mut p4 = Poseidon::<Bls12, A>::new(&constants);
+        let constants = PoseidonConstants::<Scalar, A>::new_with_strength(strength);
+        let mut p = Poseidon::<Scalar, A>::new(&constants);
+        let mut p2 = Poseidon::<Scalar, A>::new(&constants);
+        let mut p3 = Poseidon::<Scalar, A>::new(&constants);
+        let mut p4 = Poseidon::<Scalar, A>::new(&constants);
 
         let test_arity = constants.arity();
         let mut preimage = vec![Scalar::zero(); test_arity];
         for n in 0..test_arity {
-            let scalar = scalar_from_u64::<Fr>(n as u64);
+            let scalar = scalar_from_u64::<Scalar>(n as u64);
             p.input(scalar).unwrap();
             p2.input(scalar).unwrap();
             p3.input(scalar).unwrap();
@@ -722,12 +721,12 @@ mod tests {
 
     #[test]
     fn hash_compare_optimized() {
-        let constants = PoseidonConstants::<Bls12, U2>::new();
-        let mut p = Poseidon::<Bls12, U2>::new(&constants);
+        let constants = PoseidonConstants::<Scalar, U2>::new();
+        let mut p = Poseidon::<Scalar, U2>::new(&constants);
         let test_arity = constants.arity();
         let mut preimage = vec![Scalar::zero(); test_arity];
         for n in 0..test_arity {
-            let scalar = scalar_from_u64::<Fr>(n as u64);
+            let scalar = scalar_from_u64::<Scalar>(n as u64);
             p.input(scalar).unwrap();
             preimage[n] = scalar;
         }
@@ -745,9 +744,9 @@ mod tests {
 
     #[test]
     fn default_is_standard() {
-        let default_constants = PoseidonConstants::<Bls12, U8>::new();
+        let default_constants = PoseidonConstants::<Scalar, U8>::new();
         let standard_constants =
-            PoseidonConstants::<Bls12, U8>::new_with_strength(Strength::Standard);
+            PoseidonConstants::<Scalar, U8>::new_with_strength(Strength::Standard);
 
         assert_eq!(
             standard_constants.partial_rounds,

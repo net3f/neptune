@@ -213,7 +213,7 @@ mod tests {
     use super::*;
     use crate::*;
     use matrix::left_apply_matrix;
-    use paired::bls12_381::{Fr as Bls12, Fr};
+    use bls12_381::Scalar;
     use rand::SeedableRng;
     use rand_xorshift::XorShiftRng;
 
@@ -232,7 +232,7 @@ mod tests {
             m_hat_inv: _,
             m_prime,
             m_double_prime,
-        } = create_mds_matrices::<Bls12>(width);
+        } = create_mds_matrices::<Scalar>(width);
 
         for i in 0..m_hat.len() {
             for j in 0..m_hat[i].len() {
@@ -241,14 +241,14 @@ mod tests {
         }
 
         // M^-1 x M = I
-        assert!(matrix::is_identity::<Bls12>(
-            &matrix::mat_mul::<Bls12>(&m_inv, &m).unwrap()
+        assert!(matrix::is_identity::<Scalar>(
+            &matrix::mat_mul::<Scalar>(&m_inv, &m).unwrap()
         ));
 
         // M' x M'' = I
         assert_eq!(
             m,
-            matrix::mat_mul::<Bls12>(&m_prime, &m_double_prime).unwrap()
+            matrix::mat_mul::<Scalar>(&m_prime, &m_double_prime).unwrap()
         );
     }
 
@@ -267,37 +267,37 @@ mod tests {
             m_hat_inv: _,
             m_prime,
             m_double_prime,
-        } = create_mds_matrices::<Bls12>(width);
+        } = create_mds_matrices::<Scalar>(width);
 
         let mut base = Vec::with_capacity(width);
         for _ in 0..width {
-            base.push(Fr::random(&mut rng));
+            base.push(Scalar::random(&mut rng));
         }
 
         let mut x = base.clone();
-        x[0] = Fr::random(&mut rng);
+        x[0] = Scalar::random(&mut rng);
 
         let mut y = base.clone();
-        y[0] = Fr::random(&mut rng);
+        y[0] = Scalar::random(&mut rng);
 
-        let qx = apply_matrix::<Bls12>(&m_prime, &x);
-        let qy = apply_matrix::<Bls12>(&m_prime, &y);
+        let qx = apply_matrix::<Scalar>(&m_prime, &x);
+        let qy = apply_matrix::<Scalar>(&m_prime, &y);
         assert_eq!(qx[0], x[0]);
         assert_eq!(qy[0], y[0]);
         assert_eq!(qx[1..], qy[1..]);
 
-        let mx = left_apply_matrix::<Bls12>(&m, &x);
+        let mx = left_apply_matrix::<Scalar>(&m, &x);
         let m1_m2_x =
-            left_apply_matrix::<Bls12>(&m_prime, &left_apply_matrix::<Bls12>(&m_double_prime, &x));
+            left_apply_matrix::<Scalar>(&m_prime, &left_apply_matrix::<Scalar>(&m_double_prime, &x));
         assert_eq!(mx, m1_m2_x);
 
-        let xm = apply_matrix::<Bls12>(&m, &x);
-        let x_m1_m2 = apply_matrix::<Bls12>(&m_double_prime, &apply_matrix::<Bls12>(&m_prime, &x));
+        let xm = apply_matrix::<Scalar>(&m, &x);
+        let x_m1_m2 = apply_matrix::<Scalar>(&m_double_prime, &apply_matrix::<Scalar>(&m_prime, &x));
         assert_eq!(xm, x_m1_m2);
 
         let mut rk = Vec::with_capacity(width);
         for _ in 0..width {
-            rk.push(Fr::random(&mut rng));
+            rk.push(Scalar::random(&mut rng));
         }
     }
 
@@ -311,27 +311,27 @@ mod tests {
     fn test_factor_to_sparse_matrices_aux(width: usize, n: usize) {
         let mut rng = XorShiftRng::from_seed(crate::TEST_SEED);
 
-        let m = generate_mds::<Bls12>(width);
+        let m = generate_mds::<Scalar>(width);
         let m2 = m.clone();
 
-        let (pre_sparse, sparse) = factor_to_sparse_matrices::<Bls12>(m, n);
+        let (pre_sparse, sparse) = factor_to_sparse_matrices::<Scalar>(m, n);
         assert_eq!(n, sparse.len());
 
         let mut initial = Vec::with_capacity(width);
         for _ in 0..width {
-            initial.push(Fr::random(&mut rng));
+            initial.push(Scalar::random(&mut rng));
         }
 
         let mut round_keys = Vec::with_capacity(width);
         for _ in 0..n {
-            round_keys.push(Fr::random(&mut rng));
+            round_keys.push(Scalar::random(&mut rng));
         }
 
         let expected = std::iter::repeat(m2).take(n).zip(&round_keys).fold(
             initial.clone(),
             |mut acc, (m, rk)| {
-                apply_matrix::<Bls12>(&m, &acc);
-                quintic_s_box::<Bls12>(&mut acc[0], None, Some(&rk));
+                apply_matrix::<Scalar>(&m, &acc);
+                quintic_s_box::<Scalar>(&mut acc[0], None, Some(&rk));
                 acc
             },
         );
@@ -339,8 +339,8 @@ mod tests {
         let actual = sparse.iter().chain(&[pre_sparse]).zip(&round_keys).fold(
             initial.clone(),
             |mut acc, (m, rk)| {
-                apply_matrix::<Bls12>(&m, &acc);
-                quintic_s_box::<Bls12>(&mut acc[0], None, Some(&rk));
+                apply_matrix::<Scalar>(&m, &acc);
+                quintic_s_box::<Scalar>(&mut acc[0], None, Some(&rk));
                 acc
             },
         );
@@ -355,13 +355,13 @@ mod tests {
     }
 
     fn test_factor_to_sparse_matrixes_aux(width: usize, n: usize) {
-        let m = generate_mds::<Bls12>(width);
+        let m = generate_mds::<Scalar>(width);
         let m2 = m.clone();
 
-        let (pre_sparse, sparse_matrices) = factor_to_sparse_matrices::<Bls12>(m, n);
+        let (pre_sparse, sparse_matrices) = factor_to_sparse_matrices::<Scalar>(m, n);
         assert_eq!(n, sparse_matrices.len());
 
-        let (pre_sparse2, sparse_matrixes) = factor_to_sparse_matrixes::<Bls12>(m2, n);
+        let (pre_sparse2, sparse_matrixes) = factor_to_sparse_matrixes::<Scalar>(m2, n);
 
         assert_eq!(pre_sparse, pre_sparse2);
 

@@ -359,19 +359,19 @@ pub(crate) fn invert<E: ScalarEngine>(matrix: &Matrix<Scalar<E>>) -> Option<Matr
 mod tests {
     use super::*;
     use crate::scalar_from_u64;
-    use paired::bls12_381::{Fr as Bls12, Fr};
+    use bls12_381::Scalar;
 
     #[test]
     fn test_minor() {
-        let one = scalar_from_u64::<Fr>(1);
-        let two = scalar_from_u64::<Fr>(2);
-        let three = scalar_from_u64::<Fr>(3);
-        let four = scalar_from_u64::<Fr>(4);
-        let five = scalar_from_u64::<Fr>(5);
-        let six = scalar_from_u64::<Fr>(6);
-        let seven = scalar_from_u64::<Fr>(7);
-        let eight = scalar_from_u64::<Fr>(8);
-        let nine = scalar_from_u64::<Fr>(9);
+        let one = scalar_from_u64::<Scalar>(1);
+        let two = scalar_from_u64::<Scalar>(2);
+        let three = scalar_from_u64::<Scalar>(3);
+        let four = scalar_from_u64::<Scalar>(4);
+        let five = scalar_from_u64::<Scalar>(5);
+        let six = scalar_from_u64::<Scalar>(6);
+        let seven = scalar_from_u64::<Scalar>(7);
+        let eight = scalar_from_u64::<Scalar>(8);
+        let nine = scalar_from_u64::<Scalar>(9);
 
         let m = vec![
             vec![one, two, three],
@@ -391,7 +391,7 @@ mod tests {
             (2, 2, vec![vec![one, two], vec![four, five]]),
         ];
         for (i, j, expected) in &cases {
-            let result = minor::<Bls12>(&m, *i, *j);
+            let result = minor::<Scalar>(&m, *i, *j);
 
             assert_eq!(*expected, result);
         }
@@ -399,15 +399,15 @@ mod tests {
 
     #[test]
     fn test_scalar_mul() {
-        let zero = scalar_from_u64::<Fr>(0);
-        let one = scalar_from_u64::<Fr>(1);
-        let two = scalar_from_u64::<Fr>(2);
-        let three = scalar_from_u64::<Fr>(3);
-        let four = scalar_from_u64::<Fr>(4);
-        let six = scalar_from_u64::<Fr>(6);
+        let zero = scalar_from_u64::<Scalar>(0);
+        let one = scalar_from_u64::<Scalar>(1);
+        let two = scalar_from_u64::<Scalar>(2);
+        let three = scalar_from_u64::<Scalar>(3);
+        let four = scalar_from_u64::<Scalar>(4);
+        let six = scalar_from_u64::<Scalar>(6);
 
         let m = vec![vec![zero, one], vec![two, three]];
-        let res = scalar_mul::<Bls12>(two, &m);
+        let res = scalar_mul::<Scalar>(two, &m);
 
         let expected = vec![vec![zero, two], vec![four, six]];
 
@@ -416,33 +416,33 @@ mod tests {
 
     #[test]
     fn test_vec_mul() {
-        let one = scalar_from_u64::<Fr>(1);
-        let two = scalar_from_u64::<Fr>(2);
-        let three = scalar_from_u64::<Fr>(3);
-        let four = scalar_from_u64::<Fr>(4);
-        let five = scalar_from_u64::<Fr>(5);
-        let six = scalar_from_u64::<Fr>(6);
+        let one = scalar_from_u64::<Scalar>(1);
+        let two = scalar_from_u64::<Scalar>(2);
+        let three = scalar_from_u64::<Scalar>(3);
+        let four = scalar_from_u64::<Scalar>(4);
+        let five = scalar_from_u64::<Scalar>(5);
+        let six = scalar_from_u64::<Scalar>(6);
 
         let a = vec![one, two, three];
         let b = vec![four, five, six];
-        let res = vec_mul::<Bls12>(&a, &b);
+        let res = vec_mul::<Scalar>(&a, &b);
 
-        let expected = scalar_from_u64::<Fr>(32);
+        let expected = scalar_from_u64::<Scalar>(32);
 
         assert_eq!(expected, res);
     }
 
     #[test]
     fn test_transpose() {
-        let one = scalar_from_u64::<Fr>(1);
-        let two = scalar_from_u64::<Fr>(2);
-        let three = scalar_from_u64::<Fr>(3);
-        let four = scalar_from_u64::<Fr>(4);
-        let five = scalar_from_u64::<Fr>(5);
-        let six = scalar_from_u64::<Fr>(6);
-        let seven = scalar_from_u64::<Fr>(7);
-        let eight = scalar_from_u64::<Fr>(8);
-        let nine = scalar_from_u64::<Fr>(9);
+        let one = scalar_from_u64::<Scalar>(1);
+        let two = scalar_from_u64::<Scalar>(2);
+        let three = scalar_from_u64::<Scalar>(3);
+        let four = scalar_from_u64::<Scalar>(4);
+        let five = scalar_from_u64::<Scalar>(5);
+        let six = scalar_from_u64::<Scalar>(6);
+        let seven = scalar_from_u64::<Scalar>(7);
+        let eight = scalar_from_u64::<Scalar>(8);
+        let nine = scalar_from_u64::<Scalar>(9);
 
         let m = vec![
             vec![one, two, three],
@@ -456,21 +456,21 @@ mod tests {
             vec![three, six, nine],
         ];
 
-        let res = transpose::<Bls12>(&m);
+        let res = transpose::<Scalar>(&m);
         assert_eq!(expected, res);
     }
 
     #[test]
     fn test_inverse() {
-        let one = scalar_from_u64::<Fr>(1);
-        let two = scalar_from_u64::<Fr>(2);
-        let three = scalar_from_u64::<Fr>(3);
-        let four = scalar_from_u64::<Fr>(4);
-        let five = scalar_from_u64::<Fr>(5);
-        let six = scalar_from_u64::<Fr>(6);
-        let seven = scalar_from_u64::<Fr>(7);
-        let eight = scalar_from_u64::<Fr>(8);
-        let nine = scalar_from_u64::<Fr>(9);
+        let one = scalar_from_u64::<Scalar>(1);
+        let two = scalar_from_u64::<Scalar>(2);
+        let three = scalar_from_u64::<Scalar>(3);
+        let four = scalar_from_u64::<Scalar>(4);
+        let five = scalar_from_u64::<Scalar>(5);
+        let six = scalar_from_u64::<Scalar>(6);
+        let seven = scalar_from_u64::<Scalar>(7);
+        let eight = scalar_from_u64::<Scalar>(8);
+        let nine = scalar_from_u64::<Scalar>(9);
 
         let m = vec![
             vec![one, two, three],
@@ -484,22 +484,22 @@ mod tests {
             vec![seven, eight, nine],
         ];
 
-        assert!(!is_invertible::<Bls12>(&m1));
-        assert!(is_invertible::<Bls12>(&m));
+        assert!(!is_invertible::<Scalar>(&m1));
+        assert!(is_invertible::<Scalar>(&m));
 
-        let m_inv = invert::<Bls12>(&m).unwrap();
+        let m_inv = invert::<Scalar>(&m).unwrap();
 
-        let computed_identity = mat_mul::<Bls12>(&m, &m_inv).unwrap();
-        assert!(is_identity::<Bls12>(&computed_identity));
+        let computed_identity = mat_mul::<Scalar>(&m, &m_inv).unwrap();
+        assert!(is_identity::<Scalar>(&computed_identity));
 
         // S
         let some_vec = vec![six, five, four];
 
         // M^-1(S)
-        let inverse_applied = super::apply_matrix::<Bls12>(&m_inv, &some_vec);
+        let inverse_applied = super::apply_matrix::<Scalar>(&m_inv, &some_vec);
 
         // M(M^-1(S))
-        let m_applied_after_inverse = super::apply_matrix::<Bls12>(&m, &inverse_applied);
+        let m_applied_after_inverse = super::apply_matrix::<Scalar>(&m, &inverse_applied);
 
         // S = M(M^-1(S))
         assert_eq!(
@@ -512,11 +512,11 @@ mod tests {
         let base_vec = vec![eight, two, five];
 
         // S + M(B)
-        let add_after_apply = vec_add::<Bls12>(&some_vec, &apply_matrix::<Bls12>(&m, &base_vec));
+        let add_after_apply = vec_add::<Scalar>(&some_vec, &apply_matrix::<Scalar>(&m, &base_vec));
 
         // M(B + M^-1(S))
         let apply_after_add =
-            apply_matrix::<Bls12>(&m, &vec_add::<Bls12>(&base_vec, &inverse_applied));
+            apply_matrix::<Scalar>(&m, &vec_add::<Scalar>(&base_vec, &inverse_applied));
 
         // S + M(B) = M(B + M^-1(S))
         assert_eq!(add_after_apply, apply_after_add, "breakin' the law");
@@ -524,15 +524,15 @@ mod tests {
 
     #[test]
     fn test_eliminate() {
-        //let one = scalar_from_u64::<Fr>(1);
-        let two = scalar_from_u64::<Fr>(2);
-        let three = scalar_from_u64::<Fr>(3);
-        let four = scalar_from_u64::<Fr>(4);
-        let five = scalar_from_u64::<Fr>(5);
-        let six = scalar_from_u64::<Fr>(6);
-        let seven = scalar_from_u64::<Fr>(7);
-        let eight = scalar_from_u64::<Fr>(8);
-        //        let nine = scalar_from_u64::<Fr>(9);
+        //let one = scalar_from_u64::<Scalar>(1);
+        let two = scalar_from_u64::<Scalar>(2);
+        let three = scalar_from_u64::<Scalar>(3);
+        let four = scalar_from_u64::<Scalar>(4);
+        let five = scalar_from_u64::<Scalar>(5);
+        let six = scalar_from_u64::<Scalar>(6);
+        let seven = scalar_from_u64::<Scalar>(7);
+        let eight = scalar_from_u64::<Scalar>(8);
+        //        let nine = scalar_from_u64::<Scalar>(9);
 
         let m = vec![
             vec![two, three, four],
@@ -541,8 +541,8 @@ mod tests {
         ];
 
         for i in 0..rows(&m) {
-            let mut shadow = make_identity::<Bls12>(columns(&m));
-            let res = eliminate::<Bls12>(&m, i, &mut shadow);
+            let mut shadow = make_identity::<Scalar>(columns(&m));
+            let res = eliminate::<Scalar>(&m, i, &mut shadow);
             if i > 0 {
                 assert!(res.is_none());
                 continue;
@@ -554,22 +554,22 @@ mod tests {
                 1,
                 res.unwrap()
                     .iter()
-                    .filter(|&row| row[i] != Bls12::zero())
+                    .filter(|&row| row[i] != Scalar::zero())
                     .count()
             );
         }
     }
     #[test]
     fn test_upper_triangular() {
-        //        let one = scalar_from_u64::<Fr>(1);
-        let two = scalar_from_u64::<Fr>(2);
-        let three = scalar_from_u64::<Fr>(3);
-        let four = scalar_from_u64::<Fr>(4);
-        let five = scalar_from_u64::<Fr>(5);
-        let six = scalar_from_u64::<Fr>(6);
-        let seven = scalar_from_u64::<Fr>(7);
-        let eight = scalar_from_u64::<Fr>(8);
-        //        let nine = scalar_from_u64::<Fr>(9);
+        //        let one = scalar_from_u64::<Scalar>(1);
+        let two = scalar_from_u64::<Scalar>(2);
+        let three = scalar_from_u64::<Scalar>(3);
+        let four = scalar_from_u64::<Scalar>(4);
+        let five = scalar_from_u64::<Scalar>(5);
+        let six = scalar_from_u64::<Scalar>(6);
+        let seven = scalar_from_u64::<Scalar>(7);
+        let eight = scalar_from_u64::<Scalar>(8);
+        //        let nine = scalar_from_u64::<Scalar>(9);
 
         let m = vec![
             vec![two, three, four],
@@ -577,23 +577,23 @@ mod tests {
             vec![seven, eight, eight],
         ];
 
-        let mut shadow = make_identity::<Bls12>(columns(&m));
-        let _res = upper_triangular::<Bls12>(&m, &mut shadow);
+        let mut shadow = make_identity::<Scalar>(columns(&m));
+        let _res = upper_triangular::<Scalar>(&m, &mut shadow);
 
         // Actually assert things.
     }
 
     #[test]
     fn test_reduce_to_identity() {
-        //        let one = scalar_from_u64::<Fr>(1);
-        let two = scalar_from_u64::<Fr>(2);
-        let three = scalar_from_u64::<Fr>(3);
-        let four = scalar_from_u64::<Fr>(4);
-        let five = scalar_from_u64::<Fr>(5);
-        let six = scalar_from_u64::<Fr>(6);
-        let seven = scalar_from_u64::<Fr>(7);
-        let eight = scalar_from_u64::<Fr>(8);
-        //        let nine = scalar_from_u64::<Fr>(9);
+        //        let one = scalar_from_u64::<Scalar>(1);
+        let two = scalar_from_u64::<Scalar>(2);
+        let three = scalar_from_u64::<Scalar>(3);
+        let four = scalar_from_u64::<Scalar>(4);
+        let five = scalar_from_u64::<Scalar>(5);
+        let six = scalar_from_u64::<Scalar>(6);
+        let seven = scalar_from_u64::<Scalar>(7);
+        let eight = scalar_from_u64::<Scalar>(8);
+        //        let nine = scalar_from_u64::<Scalar>(9);
 
         let m = vec![
             vec![two, three, four],
@@ -601,16 +601,16 @@ mod tests {
             vec![seven, eight, eight],
         ];
 
-        let mut shadow = make_identity::<Bls12>(columns(&m));
-        let ut = upper_triangular::<Bls12>(&m, &mut shadow);
+        let mut shadow = make_identity::<Scalar>(columns(&m));
+        let ut = upper_triangular::<Scalar>(&m, &mut shadow);
 
         let res = ut
-            .and_then(|x| reduce_to_identity::<Bls12>(&x, &mut shadow))
+            .and_then(|x| reduce_to_identity::<Scalar>(&x, &mut shadow))
             .unwrap();
 
-        assert!(is_identity::<Bls12>(&res));
-        let prod = mat_mul::<Bls12>(&m, &shadow).unwrap();
+        assert!(is_identity::<Scalar>(&res));
+        let prod = mat_mul::<Scalar>(&m, &shadow).unwrap();
 
-        assert!(is_identity::<Bls12>(&prod));
+        assert!(is_identity::<Scalar>(&prod));
     }
 }

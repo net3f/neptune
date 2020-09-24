@@ -590,7 +590,7 @@ mod tests {
     use bellperson::gadgets::test::TestConstraintSystem;
     use bellperson::ConstraintSystem;
     use generic_array::typenum;
-    use paired::bls12_381::{Fr as Bls12, Fr};
+    use bls12_381::Scalar;
     use rand::SeedableRng;
     use rand_xorshift::XorShiftRng;
 
@@ -613,12 +613,12 @@ mod tests {
 
     fn test_poseidon_hash_aux<A>(strength: Strength, expected_constraints: usize)
     where
-        A: Arity<Fr>,
+        A: Arity<Scalar>,
     {
         let mut rng = XorShiftRng::from_seed(crate::TEST_SEED);
-        let mut cs = TestConstraintSystem::<Bls12>::new();
+        let mut cs = TestConstraintSystem::<Scalar>::new();
         let arity = A::to_usize();
-        let constants = PoseidonConstants::<Bls12, A>::new_with_strength(strength);
+        let constants = PoseidonConstants::<Scalar, A>::new_with_strength(strength);
 
         let expected_constraints_calculated = {
             let arity_tag_constraints = 0;
@@ -634,11 +634,11 @@ mod tests {
         };
         let mut i = 0;
 
-        let mut fr_data = vec![Fr::zero(); arity];
-        let data: Vec<AllocatedNum<Bls12>> = (0..arity)
+        let mut fr_data = vec![Scalar::zero(); arity];
+        let data: Vec<AllocatedNum<Scalar>> = (0..arity)
             .enumerate()
             .map(|_| {
-                let fr = Fr::random(&mut rng);
+                let fr = Scalar::random(&mut rng);
                 fr_data[i] = fr;
                 i += 1;
                 AllocatedNum::alloc(cs.namespace(|| format!("data {}", i)), || Ok(fr)).unwrap()
@@ -647,8 +647,8 @@ mod tests {
 
         let out = poseidon_hash(&mut cs, data, &constants).expect("poseidon hashing failed");
 
-        let mut p = Poseidon::<Bls12, A>::new_with_preimage(&fr_data, &constants);
-        let expected: Fr = p.hash_in_mode(HashMode::Correct);
+        let mut p = Poseidon::<Scalar, A>::new_with_preimage(&fr_data, &constants);
+        let expected: Scalar = p.hash_in_mode(HashMode::Correct);
 
         assert!(cs.is_satisfied(), "constraints not satisfied");
 
@@ -671,17 +671,17 @@ mod tests {
         );
     }
 
-    fn fr(n: u64) -> Fr {
-        scalar_from_u64::<Fr>(n)
+    fn fr(n: u64) -> Scalar {
+        scalar_from_u64::<Scalar>(n)
     }
 
-    fn efr(n: u64) -> Elt<Bls12> {
-        Elt::num_from_fr::<TestConstraintSystem<Bls12>>(fr(n))
+    fn efr(n: u64) -> Elt<Scalar> {
+        Elt::num_from_fr::<TestConstraintSystem<Scalar>>(fr(n))
     }
 
     #[test]
     fn test_square_sum() {
-        let mut cs = TestConstraintSystem::<Bls12>::new();
+        let mut cs = TestConstraintSystem::<Scalar>::new();
 
         let mut cs1 = cs.namespace(|| "square_sum");
         let two = fr(2);
@@ -689,7 +689,7 @@ mod tests {
             AllocatedNum::alloc(cs1.namespace(|| "three"), || Ok(scalar_from_u64(3))).unwrap();
         let res = square_sum(cs1, two, &three, true).unwrap();
 
-        let twenty_five: Fr = scalar_from_u64(25);
+        let twenty_five: Scalar = scalar_from_u64(25);
         assert_eq!(twenty_five, res.get_value().unwrap());
     }
 
@@ -701,17 +701,17 @@ mod tests {
             let three = efr(3);
             let four = efr(4);
 
-            let res = scalar_product::<Bls12, TestConstraintSystem<Bls12>>(
+            let res = scalar_product::<Scalar, TestConstraintSystem<Scalar>>(
                 &[two, three, four],
                 &[fr(5), fr(6), fr(7)],
             )
             .unwrap();
 
             assert!(res.is_num());
-            assert_eq!(scalar_from_u64::<Fr>(56), res.val().unwrap());
+            assert_eq!(scalar_from_u64::<Scalar>(56), res.val().unwrap());
         }
         {
-            let mut cs = TestConstraintSystem::<Bls12>::new();
+            let mut cs = TestConstraintSystem::<Scalar>::new();
 
             // Inputs are linear combinations and an allocated number.
             let two = efr(2);
@@ -723,14 +723,14 @@ mod tests {
                 AllocatedNum::alloc(cs.namespace(|| "four"), || Ok(scalar_from_u64(4))).unwrap();
             let four = Elt::Allocated(n4.clone());
 
-            let res = scalar_product::<Bls12, TestConstraintSystem<Bls12>>(
+            let res = scalar_product::<Scalar, TestConstraintSystem<Scalar>>(
                 &[two, three, four],
                 &[fr(5), fr(6), fr(7)],
             )
             .unwrap();
 
             assert!(res.is_num());
-            assert_eq!(scalar_from_u64::<Fr>(56), res.val().unwrap());
+            assert_eq!(scalar_from_u64::<Scalar>(56), res.val().unwrap());
 
             res.lc().iter().for_each(|(var, f)| {
                 if var.get_unchecked() == n3.get_variable().get_unchecked() {
@@ -745,7 +745,7 @@ mod tests {
             assert!(cs.is_satisfied());
         }
         {
-            let mut cs = TestConstraintSystem::<Bls12>::new();
+            let mut cs = TestConstraintSystem::<Scalar>::new();
 
             // Inputs are linear combinations and an allocated number.
             let two = efr(2);
@@ -759,7 +759,7 @@ mod tests {
 
             let mut res_vec = Vec::new();
 
-            let res = scalar_product::<Bls12, TestConstraintSystem<Bls12>>(
+            let res = scalar_product::<Scalar, TestConstraintSystem<Scalar>>(
                 &[two, three, four],
                 &[fr(5), fr(6), fr(7)],
             )
@@ -782,7 +782,7 @@ mod tests {
             let four2 = Elt::Allocated(n4.clone());
             res_vec.push(efr(3));
             res_vec.push(four2);
-            let res2 = scalar_product::<Bls12, TestConstraintSystem<Bls12>>(
+            let res2 = scalar_product::<Scalar, TestConstraintSystem<Scalar>>(
                 &res_vec,
                 &[fr(7), fr(8), fr(9)],
             )
@@ -812,7 +812,7 @@ mod tests {
         let three = efr(3);
         let four = efr(4);
 
-        let res = scalar_product_with_add::<Bls12, TestConstraintSystem<Bls12>>(
+        let res = scalar_product_with_add::<Scalar, TestConstraintSystem<Scalar>>(
             &[two, three, four],
             &[fr(5), fr(6), fr(7)],
             fr(3),

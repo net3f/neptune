@@ -209,7 +209,7 @@ fn bytes_into_fr<E: ScalarEngine>(bytes: &[u8]) -> Option<E> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use paired::bls12_381::Fr as Bls12;
+    use bls12_381::Scalar;
     use serde_json::Value;
     use std::fs::File;
     use std::io::{BufRead, BufReader};
@@ -233,12 +233,9 @@ mod tests {
             }
         });
 
-        let generated = generate_constants::<Bls12>(1, 1, 255, 9, 8, 57)
+        let generated = generate_constants::<Scalar>(1, 1, 255, 9, 8, 57)
             .iter()
-            .map(|x| {
-                let s = x.to_string();
-                s[3..s.len() - 1].to_string()
-            })
+            .map(|x| x.to_string())
             .collect::<Vec<_>>();
 
         assert_eq!(expected.len(), generated.len());
